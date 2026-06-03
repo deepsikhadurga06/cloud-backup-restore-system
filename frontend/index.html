@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cloud Backup and Recovery System — Home</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #050a14; --panel: #0b1626; --border: rgba(56,139,255,0.18);
+      --accent: #3b82f6; --accent2: #06d6a0; --accent3: #f59e0b;
+      --text: #e8f0fe; --muted: #6b7fa8; --input-bg: rgba(255,255,255,0.04); --error: #f87171;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .bg-grid { position: fixed; inset: 0; z-index: 0; background-image: linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px); background-size: 40px 40px; }
+    .bg-glow { position: fixed; z-index: 0; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: 0.15; animation: floatGlow 8s ease-in-out infinite alternate; }
+    .bg-glow.one { background: #3b82f6; top: -200px; left: -100px; }
+    .bg-glow.two { background: #06d6a0; bottom: -200px; right: -100px; animation-delay: -4s; }
+    @keyframes floatGlow { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+    .wrapper { position: relative; z-index: 1; display: flex; width: 900px; max-width: 96vw; min-height: 560px; border-radius: 24px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 32px 80px rgba(0,0,0,0.6); animation: slideUp 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+    @keyframes slideUp { from { opacity:0; transform:translateY(40px); } to { opacity:1; transform:translateY(0); } }
+    .brand-panel { flex: 1; background: linear-gradient(135deg,#0d1f3c 0%,#0a1628 60%,#051020 100%); padding: 52px 44px; display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid var(--border); position: relative; overflow: hidden; }
+    .brand-panel::before { content: ''; position: absolute; width: 300px; height: 300px; background: radial-gradient(circle,rgba(59,130,246,0.15) 0%,transparent 70%); top: -50px; right: -80px; border-radius: 50%; }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 42px; height: 42px; background: linear-gradient(135deg,var(--accent),var(--accent2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 8px 24px rgba(59,130,246,0.4); }
+    .logo-text { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-text span { color: var(--accent); }
+    .brand-title { font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800; line-height: 1.15; margin-bottom: 18px; letter-spacing: -1px; }
+    .brand-title em { color: var(--accent2); font-style: normal; }
+    .brand-desc { color: var(--muted); font-size: 14.5px; line-height: 1.7; max-width: 260px; }
+    .features { display: flex; flex-direction: column; gap: 14px; }
+    .feature { display: flex; align-items: center; gap: 12px; font-size: 13.5px; color: #8ba3c9; }
+    .feature-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); flex-shrink: 0; box-shadow: 0 0 8px var(--accent2); }
+    .form-panel { width: 420px; background: var(--panel); padding: 50px 44px; display: flex; flex-direction: column; justify-content: center; }
+    .tabs { display: flex; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 4px; margin-bottom: 28px; gap: 4px; }
+    .tab { flex: 1; padding: 9px 6px; border: none; background: transparent; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; border-radius: 9px; cursor: pointer; transition: all 0.25s; }
+    .tab.active { background: var(--accent); color: #fff; box-shadow: 0 4px 14px rgba(59,130,246,0.35); }
+    .tab.admin-tab.active { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 14px rgba(245,158,11,0.35); }
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+    .form-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .form-subtitle { color: var(--muted); font-size: 13.5px; margin-bottom: 24px; }
+    .field { margin-bottom: 16px; }
+    label { display: block; font-size: 12.5px; font-weight: 500; color: #8ba3c9; margin-bottom: 7px; letter-spacing: 0.3px; text-transform: uppercase; }
+    input[type="text"], input[type="email"], input[type="password"] { width: 100%; background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14.5px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    input::placeholder { color: #3d506e; }
+    .forgot { text-align: right; margin-top: -10px; margin-bottom: 18px; }
+    .forgot a { color: var(--accent); font-size: 12.5px; text-decoration: none; }
+    .btn-primary { width: 100%; padding: 13px; background: linear-gradient(135deg,var(--accent),#2563eb); border: none; border-radius: 10px; color: #fff; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.15s, box-shadow 0.2s; box-shadow: 0 6px 20px rgba(59,130,246,0.35); letter-spacing: 0.3px; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(59,130,246,0.45); }
+    .btn-admin { width: 100%; padding: 13px; background: linear-gradient(135deg,#f59e0b,#d97706); border: none; border-radius: 10px; color: #fff; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.15s, box-shadow 0.2s; box-shadow: 0 6px 20px rgba(245,158,11,0.35); letter-spacing: 0.3px; }
+    .btn-admin:hover { transform: translateY(-2px); }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--muted); font-size: 12px; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .error-msg { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--error); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .error-msg.show { display: block; }
+    .success-msg { background: rgba(6,214,160,0.1); border: 1px solid rgba(6,214,160,0.3); color: var(--accent2); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .success-msg.show { display: block; }
+    .admin-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; margin-bottom: 20px; }
+    .hint { font-size: 11.5px; color: var(--muted); margin-top: 6px; background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.12); border-radius: 7px; padding: 8px 11px; }
+    @media (max-width: 700px) { .brand-panel { display: none; } .wrapper { width: 100%; border-radius: 0; min-height: 100vh; } .form-panel { width: 100%; padding: 40px 28px; } }
+  </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow one"></div>
+<div class="bg-glow two"></div>
+
+<div class="wrapper">
+  <!-- Left branding panel -->
+  <div class="brand-panel">
+    <div class="logo">
+      <div class="logo-icon">☁</div>
+      <div class="logo-text">Cloud Backup and <span>Recovery System</span></div>
+    </div>
+    <div class="brand-content">
+      <div class="brand-title">Secure backups,<br><em>always within reach.</em></div>
+      <p class="brand-desc">Store, manage, and recover your files from anywhere using enterprise-grade AWS cloud infrastructure.</p>
+    </div>
+    <div class="features">
+      <div class="feature"><div class="feature-dot"></div> End-to-end encrypted storage</div>
+      <div class="feature"><div class="feature-dot"></div> Automatic scheduled backups</div>
+      <div class="feature"><div class="feature-dot"></div> One-click file recovery</div>
+      <div class="feature"><div class="feature-dot"></div> Version history & restore points</div>
+    </div>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="form-panel">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login')">Login</button>
+      <button class="tab" onclick="switchTab('register')">Register</button>
+      <button class="tab admin-tab" onclick="switchTab('admin')">⚙ Admin</button>
+    </div>
+
+    <!-- Login Form -->
+    <div class="form-section active" id="login-section">
+      <div class="form-title">Welcome back</div>
+      <div class="form-subtitle">Sign in to access your backups</div>
+      <div class="error-msg" id="login-error"></div>
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="login-email" placeholder="you@example.com" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" />
+      </div>
+      <div class="forgot"><a href="#">Forgot password?</a></div>
+      <button class="btn-primary" onclick="handleLogin()">Sign In</button>
+      <div class="divider">or</div>
+      <p style="text-align:center; font-size:13px; color:var(--muted);">
+        Don't have an account?
+        <a href="#" style="color:var(--accent); text-decoration:none;" onclick="switchTab('register')"> Register now</a>
+      </p>
+    </div>
+
+    <!-- Register Form -->
+    <div class="form-section" id="register-section">
+      <div class="form-title">Create account</div>
+      <div class="form-subtitle">Start backing up your files today</div>
+      <div class="error-msg" id="register-error"></div>
+      <div class="success-msg" id="register-success">✅ Account created! You can now login.</div>
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="reg-name" placeholder="Your name" />
+      </div>
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="reg-email" placeholder="you@example.com" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="Min. 8 characters" />
+      </div>
+      <div class="field">
+        <label>Confirm Password</label>
+        <input type="password" id="reg-confirm" placeholder="Repeat password" />
+      </div>
+      <button class="btn-primary" onclick="handleRegister()">Create Account</button>
+      <div class="divider">or</div>
+      <p style="text-align:center; font-size:13px; color:var(--muted);">
+        Already have an account?
+        <a href="#" style="color:var(--accent); text-decoration:none;" onclick="switchTab('login')"> Sign in</a>
+      </p>
+    </div>
+
+    <!-- Admin Login Form -->
+    <div class="form-section" id="admin-section">
+      <div class="admin-badge">⚙ Administrator Access</div>
+      <div class="form-title">Admin Login</div>
+      <div class="form-subtitle">Access the admin control panel</div>
+      <div class="error-msg" id="admin-error"></div>
+      <div class="field">
+        <label>Admin Email</label>
+        <input type="email" id="admin-email" placeholder="admin@cloudvault.com" />
+      </div>
+      <div class="field">
+        <label>Admin Password</label>
+        <input type="password" id="admin-password" placeholder="••••••••" />
+      </div>
+      <div class="field">
+        <label>Admin Key</label>
+        <input type="password" id="admin-key" placeholder="Enter secret admin key" />
+        <div class="hint">💡 Key: <strong>cloudvault-admin-2026</strong></div>
+      </div>
+      <button class="btn-admin" onclick="handleAdminLogin()">⚙ Access Admin Panel</button>
+      <div class="divider">or</div>
+      <p style="text-align:center; font-size:13px; color:var(--muted);">
+        Regular user?
+        <a href="#" style="color:var(--accent); text-decoration:none;" onclick="switchTab('login')"> Sign in here</a>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : 'http://3.110.130.238:5000';
+  const ADMIN_SECRET_KEY = 'cloudvault-admin-2026';
+
+  // ── Redirect if already logged in ──────────────────────────────────────────
+  (function checkExistingSession() {
+    const token = localStorage.getItem('token');
+    const user  = JSON.parse(localStorage.getItem('user') || '{}');
+    if (token) {
+      if (user.role === 'admin') { window.location.href = 'admin.html'; }
+      else { window.location.href = 'dashboard.html'; }
+    }
+  })();
+
+  // ── Tab switcher ───────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.remove('active');
+      if ((i === 0 && tab === 'login') || (i === 1 && tab === 'register') || (i === 2 && tab === 'admin')) {
+        t.classList.add('active');
+      }
+    });
+    document.getElementById('login-section').classList.toggle('active', tab === 'login');
+    document.getElementById('register-section').classList.toggle('active', tab === 'register');
+    document.getElementById('admin-section').classList.toggle('active', tab === 'admin');
+  }
+
+  // ── User Login ─────────────────────────────────────────────────────────────
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass  = document.getElementById('login-password').value.trim();
+    const err   = document.getElementById('login-error');
+    const btn   = document.querySelector('#login-section .btn-primary');
+    err.classList.remove('show');
+
+    if (!email || !pass) {
+      err.textContent = 'Please enter your email and password.';
+      err.classList.add('show');
+      return;
+    }
+
+    btn.textContent = 'Signing in…'; btn.disabled = true;
+
+    try {
+      const res  = await fetch(`${API}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        err.textContent = data.message || 'Invalid email or password.';
+        err.classList.add('show');
+      } else {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user',  JSON.stringify(data.user));
+        window.location.href = 'dashboard.html';
+      }
+    } catch (e) {
+      // ── OFFLINE FALLBACK (remove this block in production) ─────────────────
+      console.warn('Backend unreachable — using offline fallback for login');
+      if (email && pass.length >= 6) {
+        localStorage.setItem('token', 'offline-user-token');
+        localStorage.setItem('user',  JSON.stringify({ name: 'User', email, role: 'user' }));
+        window.location.href = 'dashboard.html';
+      } else {
+        err.textContent = 'Cannot connect to server. Make sure backend is running.';
+        err.classList.add('show');
+      }
+      // ───────────────────────────────────────────────────────────────────────
+    }
+
+    btn.textContent = 'Sign In'; btn.disabled = false;
+  }
+
+  // ── Register ───────────────────────────────────────────────────────────────
+  async function handleRegister() {
+    const name    = document.getElementById('reg-name').value.trim();
+    const email   = document.getElementById('reg-email').value.trim();
+    const pass    = document.getElementById('reg-password').value.trim();
+    const confirm = document.getElementById('reg-confirm').value.trim();
+    const err     = document.getElementById('register-error');
+    const suc     = document.getElementById('register-success');
+    const btn     = document.querySelector('#register-section .btn-primary');
+    err.classList.remove('show'); suc.classList.remove('show');
+
+    if (!name || !email || !pass || !confirm) { err.textContent = 'Please fill in all fields.'; err.classList.add('show'); return; }
+    if (pass.length < 8) { err.textContent = 'Password must be at least 8 characters.'; err.classList.add('show'); return; }
+    if (pass !== confirm) { err.textContent = 'Passwords do not match.'; err.classList.add('show'); return; }
+
+    btn.textContent = 'Creating…'; btn.disabled = true;
+
+    try {
+      const res  = await fetch(`${API}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password: pass })
+      });
+      const data = await res.json();
+      if (!res.ok) { err.textContent = data.message || 'Registration failed.'; err.classList.add('show'); }
+      else { suc.classList.add('show'); setTimeout(() => switchTab('login'), 2000); }
+    } catch (e) {
+      err.textContent = 'Cannot connect to server. Make sure backend is running.';
+      err.classList.add('show');
+    }
+
+    btn.textContent = 'Create Account'; btn.disabled = false;
+  }
+
+  // ── Admin Login ────────────────────────────────────────────────────────────
+  async function handleAdminLogin() {
+    const email = document.getElementById('admin-email').value.trim();
+    const pass  = document.getElementById('admin-password').value.trim();
+    const key   = document.getElementById('admin-key').value.trim();
+    const err   = document.getElementById('admin-error');
+    const btn   = document.querySelector('#admin-section .btn-admin');
+    err.classList.remove('show');
+
+    // ── Step 1: validate inputs ──────────────────────────────────────────────
+    if (!email || !pass || !key) {
+      err.textContent = 'Please fill all admin fields.';
+      err.classList.add('show');
+      return;
+    }
+
+    // ── Step 2: check admin key BEFORE hitting the server ───────────────────
+    if (key !== ADMIN_SECRET_KEY) {
+      err.textContent = '❌ Invalid admin key!';
+      err.classList.add('show');
+      return;
+    }
+
+   // ── Key is correct → now verify with real backend ────────────────────────
+    try {
+      const res  = await fetch(`${API}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass })
+      });
+      const data = await res.json();
+      if (!res.ok) { err.textContent = data.message || 'Invalid credentials.'; err.classList.add('show'); return; }
+      if (data.user.role !== 'admin') { err.textContent = '❌ This account is not an admin.'; err.classList.add('show'); return; }
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user',  JSON.stringify(data.user));
+      window.location.replace('admin.html');
+    } catch (e) {
+      err.textContent = 'Cannot connect to server.';
+      err.classList.add('show');
+    }
+  }
+</script>
+</body>
+</html>

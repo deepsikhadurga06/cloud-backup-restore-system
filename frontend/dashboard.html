@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cloud Backup and Recovery System — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060d1a; --sidebar: #080f1f; --card: #0d1829;
+      --border: rgba(56,139,255,0.12); --accent: #3b82f6;
+      --accent2: #06d6a0; --accent3: #f59e0b; --danger: #f87171;
+      --text: #dde8ff; --muted: #5a7099; --sidebar-w: 240px;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+    .bg-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-image: linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px); background-size: 44px 44px; }
+
+    /* SIDEBAR */
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w); background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; padding: 28px 0; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 22px 28px; border-bottom: 1px solid var(--border); }
+    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 6px 18px rgba(59,130,246,0.35); }
+    .logo-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; letter-spacing: -0.4px; }
+    .logo-name span { color: var(--accent); }
+    .nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 1.2px; color: var(--muted); padding: 10px 10px 6px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; color: var(--muted); font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; border: 1px solid transparent; }
+    .nav-item:hover { background: rgba(59,130,246,0.08); color: var(--text); }
+    .nav-item.active { background: rgba(59,130,246,0.14); color: var(--accent); border-color: rgba(59,130,246,0.2); }
+    .nav-item.danger:hover { background: rgba(248,113,113,0.08); color: var(--danger); }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-user { margin: 0 12px; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 11px; color: var(--accent2); }
+
+    /* MAIN */
+    .main { margin-left: var(--sidebar-w); flex: 1; padding: 32px 36px; position: relative; z-index: 1; animation: fadeIn 0.5s ease both; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .page-sub { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+    .btn-upload { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: linear-gradient(135deg, var(--accent), #2563eb); border: none; border-radius: 10px; color: #fff; font-family: 'Syne', sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(59,130,246,0.35); transition: transform 0.15s; text-decoration: none; }
+    .btn-upload:hover { transform: translateY(-2px); }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 28px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px 20px; position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: 16px 16px 0 0; }
+    .stat-card.blue::before  { background: var(--accent); }
+    .stat-card.green::before { background: var(--accent2); }
+    .stat-card.amber::before { background: var(--accent3); }
+    .stat-card.red::before   { background: var(--danger); }
+    .stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 16px; }
+    .stat-card.blue  .stat-icon { background: rgba(59,130,246,0.12); }
+    .stat-card.green .stat-icon { background: rgba(6,214,160,0.12); }
+    .stat-card.amber .stat-icon { background: rgba(245,158,11,0.12); }
+    .stat-card.red   .stat-icon { background: rgba(248,113,113,0.12); }
+    .stat-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .stat-label { color: var(--muted); font-size: 12.5px; margin-top: 5px; }
+    .stat-change { font-size: 11.5px; margin-top: 10px; }
+    .stat-change.up { color: var(--accent2); }
+
+    /* Bottom grid */
+    .bottom-grid { display: grid; grid-template-columns: 1fr 320px; gap: 18px; }
+
+    /* Files table */
+    .files-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .card-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; padding: 22px 24px 0; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+    .card-badge { font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--accent2); background: rgba(6,214,160,0.1); border: 1px solid rgba(6,214,160,0.2); padding: 3px 10px; border-radius: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 10px 18px; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 18px; font-size: 13.5px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(59,130,246,0.03); }
+    .file-name { font-weight: 500; font-size: 13.5px; }
+    .file-size { color: var(--muted); font-size: 12px; }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 500; }
+    .badge.success { background: rgba(6,214,160,0.1); color: var(--accent2); border: 1px solid rgba(6,214,160,0.2); }
+    .action-btn { background: transparent; border: 1px solid var(--border); border-radius: 7px; padding: 5px 11px; color: var(--muted); font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; margin-right: 4px; }
+    .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .action-btn.del:hover { border-color: var(--danger); color: var(--danger); }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+    .empty-icon { font-size: 36px; margin-bottom: 12px; }
+    .loading-cell { text-align: center; padding: 40px; color: var(--muted); }
+
+    /* Activity card */
+    .activity-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .activity-list { display: flex; flex-direction: column; }
+    .activity-item { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .activity-item:last-child { border-bottom: none; }
+    .a-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+    .a-text { font-size: 13px; line-height: 1.5; }
+    .a-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; z-index: 300; background: #0d1829; border: 1px solid rgba(6,214,160,0.3); border-radius: 12px; padding: 13px 18px; color: var(--accent2); font-size: 13.5px; display: none; align-items: center; gap: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    .toast.show { display: flex; }
+    .toast.error { border-color: rgba(248,113,113,0.3); color: var(--danger); }
+
+    @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2,1fr); } .bottom-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 720px) { .sidebar { display: none; } .main { margin-left: 0; padding: 20px 16px; } .stats-grid { grid-template-columns: repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">☁</div>
+    <div class="logo-name">Cloud Backup & <span>Recovery</span></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-label">Main</div>
+<a class="nav-item active" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+<a class="nav-item" href="upload.html"><span class="nav-icon">⬆</span> Upload Backup</a>
+<a class="nav-item" href="backup.html"><span class="nav-icon">📁</span> My Backups</a>
+<a class="nav-item" href="restore.html"><span class="nav-icon">🔄</span> Restore Files</a>
+<a class="nav-item" href="setting.html"><span class="nav-icon">⚙️</span> Settings</a>
+<a class="nav-item danger" href="#" onclick="logout()"><span class="nav-icon">🚪</span> Logout</a>
+
+  </nav>
+  <div class="sidebar-user">
+    <div class="avatar" id="user-avatar">?</div>
+    <div>
+      <div class="user-name" id="user-name">Loading…</div>
+      <div class="user-role" id="user-role">User</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub" id="welcome-msg">Welcome back!</div>
+    </div>
+    <a class="btn-upload" href="upload.html">⬆ &nbsp;New Backup</a>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card blue">
+      <div class="stat-icon">📁</div>
+      <div class="stat-value" id="stat-files">—</div>
+      <div class="stat-label">Total Backups</div>
+      <div class="stat-change up" id="stat-files-sub">Loading…</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-icon">✅</div>
+      <div class="stat-value">100%</div>
+      <div class="stat-label">Success Rate</div>
+      <div class="stat-change up">All uploads successful</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-icon">☁</div>
+      <div class="stat-value" id="stat-storage">—</div>
+      <div class="stat-label">Storage Used</div>
+      <div class="stat-change up" id="stat-storage-sub">From S3</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-icon">📅</div>
+      <div class="stat-value" id="stat-today">—</div>
+      <div class="stat-label">Uploaded Today</div>
+      <div class="stat-change up">Today's backups</div>
+    </div>
+  </div>
+
+  <!-- Bottom grid -->
+  <div class="bottom-grid">
+
+    <!-- Files Table -->
+    <div class="files-card">
+      <div class="card-title">
+        📁 My Backups
+        <span class="card-badge">Live from S3</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>File Name</th>
+            <th>Size</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="files-body">
+          <tr><td colspan="5" class="loading-cell">⏳ Loading your backups…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Activity -->
+    <div class="activity-card">
+      <div class="card-title" style="padding:0;margin-bottom:16px;">Recent Activity</div>
+      <div class="activity-list" id="activity-list">
+        <div style="text-align:center;padding:20px;color:var(--muted)">⏳ Loading…</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : 'http://3.110.130.238:5000';
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || '{}');
+
+  // ── Auth guard ────────────────────────────────────────────────────────────────
+  if (!token) { window.location.replace('index.html'); }
+
+  // ── Set user info in sidebar ──────────────────────────────────────────────────
+  if (user.name) {
+    document.getElementById('user-name').textContent    = user.name;
+    document.getElementById('user-avatar').textContent  = user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('user-role').textContent    = user.role === 'admin' ? '⭐ Admin' : 'Free Plan';
+    document.getElementById('welcome-msg').textContent  = `Welcome back, ${user.name.split(' ')[0]}! Here's your backup overview.`;
+  }
+
+  // ── Logout ────────────────────────────────────────────────────────────────────
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace('index.html');
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────────
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── Format bytes ──────────────────────────────────────────────────────────────
+  function formatSize(bytes) {
+    if (bytes === 0) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024*1024)).toFixed(1) + ' MB';
+    return (bytes / (1024*1024*1024)).toFixed(2) + ' GB';
+  }
+
+  function formatDate(d) {
+    return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function fileIcon(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    if (['jpg','jpeg','png','gif','webp','svg'].includes(ext)) return '🖼';
+    if (['mp4','mov','avi','mkv'].includes(ext)) return '🎬';
+    if (['pdf'].includes(ext)) return '📄';
+    if (['zip','tar','gz','rar'].includes(ext)) return '📦';
+    if (['js','py','java','cpp','html','css'].includes(ext)) return '💻';
+    return '📁';
+  }
+
+  // ── Load files from S3 ────────────────────────────────────────────────────────
+  async function loadFiles() {
+    try {
+      const res  = await fetch(`${API}/api/backup/list`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (!data.success || !data.files.length) {
+        document.getElementById('files-body').innerHTML =
+          `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📭</div>No backups yet. Upload your first file!</div></td></tr>`;
+        document.getElementById('stat-files').textContent    = '0';
+        document.getElementById('stat-storage').textContent  = '0 B';
+        document.getElementById('stat-today').textContent    = '0';
+        document.getElementById('stat-files-sub').textContent= 'No files yet';
+        loadActivity([]);
+        return;
+      }
+
+      const files = data.files;
+      const today = new Date().toDateString();
+
+      // Stats
+      const totalSize   = files.reduce((s, f) => s + f.size, 0);
+      const todayFiles  = files.filter(f => new Date(f.date).toDateString() === today).length;
+
+      document.getElementById('stat-files').textContent     = files.length;
+      document.getElementById('stat-storage').textContent   = formatSize(totalSize);
+      document.getElementById('stat-today').textContent     = todayFiles;
+      document.getElementById('stat-files-sub').textContent = `↑ ${todayFiles} uploaded today`;
+      document.getElementById('stat-storage-sub').textContent = `Across ${files.length} files`;
+
+      // Table — show latest 10
+      const recent = [...files].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+      document.getElementById('files-body').innerHTML = recent.map(f => `
+        <tr>
+          <td>
+            <span style="margin-right:8px;">${fileIcon(f.name)}</span>
+            <span class="file-name">${esc(f.name)}</span>
+          </td>
+          <td class="file-size">${formatSize(f.size)}</td>
+          <td class="file-size">${formatDate(f.date)}</td>
+          <td><span class="badge success">✓ Uploaded</span></td>
+          <td>
+            <button class="action-btn" onclick="downloadFile('${esc(f.key)}')">⬇ Download</button>
+            <button class="action-btn del" onclick="deleteFile('${esc(f.key)}', '${esc(f.name)}')">🗑</button>
+          </td>
+        </tr>`).join('');
+
+      loadActivity(recent);
+
+    } catch (e) {
+      document.getElementById('files-body').innerHTML =
+        `<tr><td colspan="5" class="loading-cell">❌ Cannot connect to server.</td></tr>`;
+    }
+  }
+
+  // ── Activity feed ─────────────────────────────────────────────────────────────
+  function loadActivity(files) {
+    const list = document.getElementById('activity-list');
+    if (!files.length) {
+      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">No activity yet.</div>';
+      return;
+    }
+    const colors = ['var(--accent2)', 'var(--accent)', 'var(--accent3)'];
+    list.innerHTML = files.slice(0, 6).map((f, i) => `
+      <div class="activity-item">
+        <div class="a-dot" style="background:${colors[i%3]};margin-top:5px;flex-shrink:0;"></div>
+        <div>
+          <div class="a-text">Backup uploaded — <strong>${esc(f.name)}</strong></div>
+          <div class="a-time">${formatDate(f.date)}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── Download ──────────────────────────────────────────────────────────────────
+  async function downloadFile(key) {
+    try {
+      const res  = await fetch(`${API}/api/backup/download?key=${encodeURIComponent(key)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        window.open(data.url, '_blank');
+        showToast('✅ Download started!');
+      } else {
+        showToast('❌ Download failed', true);
+      }
+    } catch (e) { showToast('❌ Cannot connect to server.', true); }
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────────
+  async function deleteFile(key, name) {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    try {
+      const res  = await fetch(`${API}/api/backup/delete?key=${encodeURIComponent(key)}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('🗑 File deleted');
+        loadFiles();
+      } else {
+        showToast('❌ Delete failed', true);
+      }
+    } catch (e) { showToast('❌ Cannot connect to server.', true); }
+  }
+
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
+  loadFiles();
+</script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cloud Backup and Recovery System — Restore Files</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060d1a; --sidebar: #080f1f; --card: #0d1829;
+      --border: rgba(56,139,255,0.12); --accent: #3b82f6;
+      --accent2: #06d6a0; --accent3: #f59e0b; --danger: #f87171;
+      --text: #dde8ff; --muted: #5a7099; --sidebar-w: 240px;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+    .bg-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-image: linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px); background-size: 44px 44px; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w); background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; padding: 28px 0; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 22px 28px; border-bottom: 1px solid var(--border); }
+    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 6px 18px rgba(59,130,246,0.35); }
+    .logo-name { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: -0.4px; }
+    .logo-name span { color: var(--accent); }
+    .nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 1.2px; color: var(--muted); padding: 10px 10px 6px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; color: var(--muted); font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+    .nav-item:hover { background: rgba(59,130,246,0.08); color: var(--text); }
+    .nav-item.active { background: rgba(6,214,160,0.12); color: var(--accent2); border: 1px solid rgba(6,214,160,0.2); }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-user { margin: 0 12px; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .user-name { font-size: 13px; font-weight: 600; }
+    .user-plan { font-size: 11px; color: var(--accent2); }
+    .main { margin-left: var(--sidebar-w); flex: 1; padding: 32px 36px; position: relative; z-index: 1; animation: fadeIn 0.5s ease both; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .page-sub { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+    .steps-bar { display: flex; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px 28px; margin-bottom: 28px; }
+    .step { display: flex; align-items: center; gap: 12px; flex: 1; }
+    .step-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; flex-shrink: 0; transition: all 0.3s; }
+    .step-num.done { background: var(--accent2); color: #fff; box-shadow: 0 0 12px rgba(6,214,160,0.4); }
+    .step-num.active { background: var(--accent); color: #fff; box-shadow: 0 0 12px rgba(59,130,246,0.4); }
+    .step-num.waiting { background: rgba(255,255,255,0.06); color: var(--muted); }
+    .step-label { font-size: 13px; font-weight: 600; }
+    .step-label.active { color: var(--accent); }
+    .step-label.done { color: var(--accent2); }
+    .step-label.waiting { color: var(--muted); }
+    .step-desc { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+    .step-line { flex: 0 0 40px; height: 1px; background: var(--border); margin: 0 8px; }
+    .step-line.done { background: var(--accent2); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 26px; margin-bottom: 20px; }
+    .card-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .search-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-wrap input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px 11px 38px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap input::placeholder { color: var(--muted); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .file-card { background: rgba(255,255,255,0.03); border: 2px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; position: relative; }
+    .file-card:hover { border-color: var(--accent); background: rgba(59,130,246,0.06); transform: translateY(-2px); }
+    .file-card.selected { border-color: var(--accent2); background: rgba(6,214,160,0.06); }
+    .fc-icon { font-size: 30px; margin-bottom: 10px; }
+    .fc-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+    .fc-meta { font-size: 11.5px; color: var(--muted); }
+    .fc-date { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .summary-box { background: rgba(6,214,160,0.06); border: 1px solid rgba(6,214,160,0.2); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13.5px; }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row span:first-child { color: var(--muted); }
+    .restore-progress { display: none; }
+    .restore-progress.show { display: block; }
+    .prog-track { height: 10px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden; margin: 16px 0 8px; }
+    .prog-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent2), var(--accent)); width: 0%; transition: width 0.4s ease; box-shadow: 0 0 12px rgba(6,214,160,0.4); }
+    .prog-label { display: flex; justify-content: space-between; font-size: 13px; }
+    .success-state { display: none; text-align: center; padding: 30px 20px; }
+    .success-state.show { display: block; }
+    .success-icon { font-size: 56px; margin-bottom: 16px; }
+    .success-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent2); margin-bottom: 8px; }
+    .success-sub { color: var(--muted); font-size: 14px; }
+    .btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; background: linear-gradient(135deg, var(--accent2), #059669); border: none; border-radius: 11px; color: #fff; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px rgba(6,214,160,0.3); transition: transform 0.15s, box-shadow 0.2s; }
+    .btn-primary:hover { transform: translateY(-2px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-secondary { display: inline-flex; align-items: center; gap: 8px; padding: 13px 24px; background: transparent; border: 1px solid var(--border); border-radius: 11px; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+    .step-section { display: none; }
+    .step-section.active { display: block; }
+    .loading { text-align: center; padding: 40px; color: var(--muted); }
+    .toast { position: fixed; bottom: 28px; right: 28px; z-index: 300; background: #0d1829; border: 1px solid rgba(6,214,160,0.3); border-radius: 12px; padding: 14px 20px; color: var(--accent2); font-size: 13.5px; display: none; align-items: center; gap: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    .toast.show { display: flex; }
+    @media (max-width: 720px) { .sidebar { display: none; } .main { margin-left: 0; padding: 20px 16px; } }
+  </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">☁</div>
+    <div class="logo-name">Cloud Backup and <span>Recovery System</span></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-label">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-item" href="upload.html"><span class="nav-icon">⬆</span> Upload Backup</a>
+    <a class="nav-item" href="backup.html"><span class="nav-icon">📁</span> My Backups</a>
+    <a class="nav-item active" href="restore.html"><span class="nav-icon">🔄</span> Restore Files</a>
+    <a class="nav-item" href="setting.html"><span class="nav-icon">⚙️</span> Settings</a>
+    <a class="nav-item" href="index.html"><span class="nav-icon">🚪</span> Logout</a>
+  </nav>
+  <div class="sidebar-user">
+    <div class="avatar">V</div>
+    <div>
+      <div class="user-name">vani</div>
+      <div class="user-plan">Pro Plan</div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Restore Files</div>
+      <div class="page-sub">Recover your files from AWS S3 in 3 simple steps</div>
+    </div>
+  </div>
+
+  <div class="steps-bar">
+    <div class="step">
+      <div class="step-num active" id="snum-1">1</div>
+      <div>
+        <div class="step-label active" id="slabel-1">Select File</div>
+        <div class="step-desc">Choose which backup to restore</div>
+      </div>
+    </div>
+    <div class="step-line" id="sline-1"></div>
+    <div class="step">
+      <div class="step-num waiting" id="snum-2">2</div>
+      <div>
+        <div class="step-label waiting" id="slabel-2">Confirm</div>
+        <div class="step-desc">Review restore details</div>
+      </div>
+    </div>
+    <div class="step-line" id="sline-2"></div>
+    <div class="step">
+      <div class="step-num waiting" id="snum-3">3</div>
+      <div>
+        <div class="step-label waiting" id="slabel-3">Done</div>
+        <div class="step-desc">File restored!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 1: Select File -->
+  <div class="step-section active" id="section-1">
+    <div class="card">
+      <div class="card-title">📁 Select a File to Restore</div>
+      <div class="search-row">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search backups..." oninput="searchFiles(this.value)"/>
+        </div>
+      </div>
+      <div class="file-grid" id="file-grid">
+        <div class="loading">⏳ Loading files from AWS S3...</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <span style="font-size:13px; color:var(--muted);" id="selected-hint">No file selected</span>
+      <button class="btn-primary" id="btn-next-1" onclick="goStep(2)" disabled>Next → Confirm Restore</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Confirm -->
+  <div class="step-section" id="section-2">
+    <div class="card">
+      <div class="card-title">✅ Confirm Restore</div>
+      <div class="summary-box">
+        <div class="summary-row"><span>File Name</span><span id="sum-name">—</span></div>
+        <div class="summary-row"><span>File Size</span><span id="sum-size">—</span></div>
+        <div class="summary-row"><span>Upload Date</span><span id="sum-date">—</span></div>
+        <div class="summary-row"><span>Storage</span><span>AWS S3</span></div>
+        <div class="summary-row"><span>Action</span><span style="color:var(--accent2)">⬇ Download to your PC</span></div>
+      </div>
+
+      <div class="restore-progress" id="restore-progress">
+        <div class="prog-label">
+          <span id="prog-text">Preparing restore...</span>
+          <span id="prog-pct">0%</span>
+        </div>
+        <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+      </div>
+
+      <div class="success-state" id="success-state">
+        <div class="success-icon">✅</div>
+        <div class="success-title">Restore Complete!</div>
+        <div class="success-sub">Your file has been downloaded successfully.</div>
+        <br>
+        <button class="btn-primary" onclick="goStep(1)" style="margin-top:16px">🔄 Restore Another File</button>
+      </div>
+    </div>
+
+    <div class="btn-row" id="confirm-btns">
+      <button class="btn-secondary" onclick="goStep(1)">← Back</button>
+      <button class="btn-primary" onclick="startRestore()">🔄 Start Restore & Download</button>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // Show logged in user name
+const user = JSON.parse(localStorage.getItem('user') || '{}');
+if (user.name) {
+  document.querySelectorAll('.user-name').forEach(el => el.textContent = user.name);
+  document.querySelectorAll('.avatar').forEach(el => el.textContent = user.name[0].toUpperCase());
+  document.querySelectorAll('.user-plan').forEach(el => el.textContent = user.email || 'Free Plan');
+}
+if (!localStorage.getItem('token')) window.location.href = 'index.html';
+  const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  ? 'http://localhost:5000' 
+  : 'http://3.110.130.238:5000';
+  let allFiles = [];
+  let selectedFile = null;
+
+  function getFileIcon(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    if (['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼';
+    if (['mp4','mov','avi','mkv'].includes(ext)) return '🎬';
+    if (['pdf'].includes(ext)) return '📄';
+    if (['zip','tar','gz','rar'].includes(ext)) return '🗜';
+    if (['sql','db'].includes(ext)) return '🗄';
+    if (['html','js','css','py','json'].includes(ext)) return '💻';
+    return '📁';
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+    if (bytes < 1024*1024*1024) return (bytes/(1024*1024)).toFixed(1) + ' MB';
+    return (bytes/(1024*1024*1024)).toFixed(2) + ' GB';
+  }
+
+  function formatDate(d) {
+    return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  async function loadFiles() {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/api/backup/list`, {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+      const data = await res.json();
+      if (data.success) {
+        allFiles = data.files;
+        renderGrid(allFiles);
+      }
+    } catch(err) {
+      document.getElementById('file-grid').innerHTML = '<div class="loading">❌ Cannot connect to server. Make sure backend is running.</div>';
+    }
+  }
+
+  function renderGrid(files) {
+    const grid = document.getElementById('file-grid');
+    if (files.length === 0) {
+      grid.innerHTML = '<div class="loading">📂 No files found.</div>';
+      return;
+    }
+    grid.innerHTML = files.map((f, i) => `
+      <div class="file-card" onclick="selectFile(${i})" id="fc-${i}">
+        <div class="fc-icon">${getFileIcon(f.name)}</div>
+        <div class="fc-name">${f.name}</div>
+        <div class="fc-meta">${formatSize(f.size)}</div>
+        <div class="fc-date">${formatDate(f.date)}</div>
+      </div>
+    `).join('');
+  }
+
+  function selectFile(i) {
+    document.querySelectorAll('.file-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('fc-' + i).classList.add('selected');
+    selectedFile = allFiles[i];
+    document.getElementById('selected-hint').textContent = '✅ Selected: ' + selectedFile.name;
+    document.getElementById('btn-next-1').disabled = false;
+  }
+
+  function searchFiles(q) {
+    const filtered = allFiles.filter(f => f.name.toLowerCase().includes(q.toLowerCase()));
+    renderGrid(filtered);
+  }
+
+  function goStep(n) {
+    document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + n).classList.add('active');
+
+    for (let i = 1; i <= 3; i++) {
+      const num = document.getElementById('snum-' + i);
+      const label = document.getElementById('slabel-' + i);
+      const line = document.getElementById('sline-' + i);
+      if (i < n) {
+        num.className = 'step-num done';
+        label.className = 'step-label done';
+        if (line) line.className = 'step-line done';
+      } else if (i === n) {
+        num.className = 'step-num active';
+        label.className = 'step-label active';
+      } else {
+        num.className = 'step-num waiting';
+        label.className = 'step-label waiting';
+        if (line) line.className = 'step-line';
+      }
+    }
+
+    if (n === 2 && selectedFile) {
+      document.getElementById('sum-name').textContent = selectedFile.name;
+      document.getElementById('sum-size').textContent = formatSize(selectedFile.size);
+      document.getElementById('sum-date').textContent = formatDate(selectedFile.date);
+    }
+  }
+
+  async function startRestore() {
+    if (!selectedFile) return;
+
+    document.getElementById('confirm-btns').style.display = 'none';
+    const progress = document.getElementById('restore-progress');
+    const fill = document.getElementById('prog-fill');
+    const pct = document.getElementById('prog-pct');
+    const text = document.getElementById('prog-text');
+
+    progress.classList.add('show');
+
+    // Animate progress
+    let p = 0;
+    text.textContent = 'Fetching from AWS S3...';
+    const interval = setInterval(() => {
+      p += 10;
+      fill.style.width = p + '%';
+      pct.textContent = p + '%';
+      if (p >= 80) clearInterval(interval);
+    }, 150);
+
+    try {
+      const res = await fetch(`${API_URL}/api/backup/download?key=${encodeURIComponent(selectedFile.key)}`);
+      const data = await res.json();
+
+      clearInterval(interval);
+      fill.style.width = '100%';
+      pct.textContent = '100%';
+      text.textContent = 'Complete!';
+
+      if (data.success) {
+        // Trigger download
+        const a = document.createElement('a');
+        a.href = data.url;
+        a.download = selectedFile.name;
+        a.click();
+
+        setTimeout(() => {
+          progress.classList.remove('show');
+          document.getElementById('success-state').classList.add('show');
+          goStep(3);
+          showToast('✅ File restored successfully!');
+        }, 800);
+      }
+    } catch(err) {
+      clearInterval(interval);
+      text.textContent = '❌ Restore failed. Check backend.';
+      showToast('❌ Restore failed!');
+    }
+  }
+
+  loadFiles();
+</script>
+</body>
+</html>

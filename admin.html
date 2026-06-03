@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cloud Backup and Recovery System — Admin Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060d1a; --sidebar: #080f1f; --card: #0d1829;
+      --border: rgba(56,139,255,0.12); --accent: #3b82f6;
+      --accent2: #06d6a0; --accent3: #f59e0b; --danger: #f87171;
+      --purple: #a78bfa; --text: #dde8ff; --muted: #5a7099;
+      --sidebar-w: 240px;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+    .bg-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-image: linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px); background-size: 44px 44px; }
+
+    /* SIDEBAR */
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w); background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; padding: 28px 0; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 22px 20px; border-bottom: 1px solid var(--border); }
+    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--danger), #dc2626); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 6px 18px rgba(248,113,113,0.4); }
+    .logo-name { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800; }
+    .logo-name span { color: var(--danger); }
+    .admin-badge { background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3); color: var(--danger); font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-left: 4px; letter-spacing: 0.5px; }
+    .nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 1.2px; color: var(--muted); padding: 10px 10px 6px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; color: var(--muted); font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; border: 1px solid transparent; }
+    .nav-item:hover { background: rgba(248,113,113,0.08); color: var(--text); }
+    .nav-item.active { background: rgba(248,113,113,0.14); color: var(--danger); border-color: rgba(248,113,113,0.2); }
+    .nav-item.blue:hover { background: rgba(59,130,246,0.08); color: var(--accent); }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-admin { margin: 0 12px; padding: 14px; background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.15); border-radius: 12px; display: flex; align-items: center; gap: 12px; }
+    .admin-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--danger), #dc2626); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+
+    /* MAIN */
+    .main { margin-left: var(--sidebar-w); flex: 1; padding: 32px 36px; position: relative; z-index: 1; animation: fadeIn 0.5s ease both; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .page-sub { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 16px; position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: 14px 14px 0 0; }
+    .stat-card.red::before   { background: var(--danger); }
+    .stat-card.blue::before  { background: var(--accent); }
+    .stat-card.green::before { background: var(--accent2); }
+    .stat-card.amber::before { background: var(--accent3); }
+    .stat-card.purple::before{ background: var(--purple); }
+    .stat-icon { font-size: 22px; margin-bottom: 10px; }
+    .stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .stat-label { color: var(--muted); font-size: 11.5px; margin-top: 4px; }
+    .stat-change { font-size: 11px; margin-top: 8px; }
+    .stat-change.up   { color: var(--accent2); }
+    .stat-change.down { color: var(--danger); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 5px; margin-bottom: 20px; width: fit-content; }
+    .tab { padding: 9px 18px; border-radius: 9px; border: none; background: transparent; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .tab.active { background: var(--danger); color: #fff; box-shadow: 0 4px 12px rgba(248,113,113,0.3); }
+    .tab-section { display: none; }
+    .tab-section.active { display: block; }
+
+    /* Table */
+    .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
+    .table-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+    .table-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+    .search-wrap { position: relative; }
+    .search-wrap input { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 9px; padding: 9px 14px 9px 34px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; width: 220px; transition: border-color 0.2s; }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap input::placeholder { color: var(--muted); }
+    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; }
+    select.fsel { padding: 9px 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 9px; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; cursor: pointer; }
+    select.fsel option { background: #0d1829; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 11px 18px; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.01); }
+    td { padding: 13px 18px; font-size: 13.5px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(59,130,246,0.03); }
+    .user-cell { display: flex; align-items: center; gap: 10px; }
+    .u-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .u-name { font-size: 13.5px; font-weight: 500; }
+    .u-email { font-size: 11.5px; color: var(--muted); }
+
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 500; }
+    .badge.active  { background: rgba(6,214,160,0.1);  color: var(--accent2); border: 1px solid rgba(6,214,160,0.2); }
+    .badge.blocked { background: rgba(248,113,113,0.1); color: var(--danger);  border: 1px solid rgba(248,113,113,0.2); }
+    .badge.admin   { background: rgba(245,158,11,0.1);  color: var(--accent3); border: 1px solid rgba(245,158,11,0.2); }
+
+    .act-btn { background: transparent; border: 1px solid var(--border); border-radius: 7px; padding: 5px 11px; color: var(--muted); font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; margin-right: 4px; }
+    .act-btn:hover       { border-color: var(--accent); color: var(--accent); }
+    .act-btn.block:hover { border-color: var(--accent3); color: var(--accent3); }
+    .act-btn.del:hover   { border-color: var(--danger);  color: var(--danger); }
+
+    .btn-primary { display: inline-flex; align-items: center; gap: 7px; padding: 10px 18px; background: linear-gradient(135deg, var(--danger), #dc2626); border: none; border-radius: 10px; color: #fff; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(248,113,113,0.3); transition: transform 0.15s; }
+    .btn-primary:hover { transform: translateY(-1px); }
+
+    /* Empty / loading states */
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 14px; }
+    .empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
+    .loading-row td { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+
+    /* Pagination */
+    .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-top: 1px solid var(--border); }
+    .page-info { font-size: 13px; color: var(--muted); }
+    .page-btns { display: flex; gap: 5px; }
+    .page-btn { min-width: 30px; height: 30px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+    .page-btn:hover, .page-btn.active { border-color: var(--danger); color: var(--danger); background: rgba(248,113,113,0.1); }
+    .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 28px; right: 28px; z-index: 300; background: #0d1829; border: 1px solid rgba(6,214,160,0.3); border-radius: 12px; padding: 13px 18px; color: var(--accent2); font-size: 13.5px; display: none; align-items: center; gap: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    .toast.show { display: flex; }
+    .toast.error { border-color: rgba(248,113,113,0.3); color: var(--danger); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .modal-overlay.show { display: flex; }
+    .modal { background: #0d1829; border: 1px solid var(--border); border-radius: 18px; padding: 30px; width: 400px; max-width: 92vw; animation: popIn 0.3s cubic-bezier(0.16,1,0.3,1); }
+    @keyframes popIn { from { opacity:0; transform:scale(0.92); } to { opacity:1; transform:scale(1); } }
+    .modal-title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; margin-bottom: 8px; }
+    .modal-sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+    .modal-field { margin-bottom: 14px; }
+    .modal-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 6px; }
+    .modal-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 9px; padding: 10px 13px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; }
+    .modal-input:focus { border-color: var(--accent); }
+    .modal-btns { display: flex; gap: 10px; margin-top: 18px; }
+    .btn-confirm { flex: 1; padding: 11px; background: linear-gradient(135deg, var(--danger), #dc2626); border: none; border-radius: 10px; color: #fff; font-family: 'Syne', sans-serif; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+    .btn-cancel  { flex: 1; padding: 11px; background: transparent; border: 1px solid var(--border); border-radius: 10px; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13.5px; cursor: pointer; }
+    .btn-cancel:hover { border-color: var(--danger); color: var(--danger); }
+
+    @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(3,1fr); } }
+    @media (max-width: 720px)  { .sidebar { display: none; } .main { margin-left: 0; padding: 20px 16px; } .stats-grid { grid-template-columns: repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🛡</div>
+    <div>
+      <div class="logo-name">Cloud Backup &amp; <span>Recovery</span></div>
+      <span class="admin-badge">ADMIN</span>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-label">Admin Panel</div>
+    <a class="nav-item active" id="nav-overview" href="#" onclick="showSection('overview',this)"><span class="nav-icon">📊</span> Overview</a>
+    <a class="nav-item" id="nav-users"    href="#" onclick="showSection('users',this)"><span class="nav-icon">👥</span> Manage Users</a>
+    <a class="nav-item" id="nav-logs"     href="#" onclick="showSection('logs',this)"><span class="nav-icon">📋</span> Activity Logs</a>
+    
+    <a class="nav-item blue" href="#" onclick="logout()"><span class="nav-icon">🚪</span> Logout</a>
+  </nav>
+  <div class="sidebar-admin">
+    <div class="admin-avatar" id="admin-avatar-initials">AD</div>
+    <div>
+      <div style="font-size:13px;font-weight:600;" id="sidebar-admin-name">Admin</div>
+      <div style="font-size:11px;color:var(--danger);">Super Admin</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">🛡 Admin Panel</div>
+      <div class="page-sub">Full system control — manage users &amp; activity</div>
+    </div>
+    <div>
+      <button class="btn-primary" onclick="openAddModal()">+ Add User</button>
+    </div>
+  </div>
+
+  <!-- ── OVERVIEW ──────────────────────────────────────────────────────────── -->
+  <section id="section-overview" class="tab-section active">
+    <div class="stats-grid">
+      <div class="stat-card red">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value" id="stat-total-users">—</div>
+        <div class="stat-label">Total Users</div>
+        <div class="stat-change up" id="stat-new-week">Loading…</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon">📁</div>
+        <div class="stat-value" id="stat-total-backups">—</div>
+        <div class="stat-label">Total Backups</div>
+        <div class="stat-change up" id="stat-backups-today">—</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">☁</div>
+        <div class="stat-value" id="stat-storage">—</div>
+        <div class="stat-label">Total Storage</div>
+        <div class="stat-change up" id="stat-storage-growth">—</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="stat-success">—</div>
+        <div class="stat-label">Success Rate</div>
+        <div class="stat-change" id="stat-success-sub">—</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon">🔒</div>
+        <div class="stat-value" id="stat-blocked">—</div>
+        <div class="stat-label">Blocked Users</div>
+        <div class="stat-change up" id="stat-blocks-week">—</div>
+      </div>
+    </div>
+
+    <!-- Recent users preview -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">👥 Recent Registrations</div>
+        <button class="act-btn" onclick="showSection('users', document.getElementById('nav-users'))">View All →</button>
+      </div>
+      <table>
+        <thead><tr><th>User</th><th>Role</th><th>Joined</th></tr></thead>
+        <tbody id="recent-users-body">
+          <tr class="loading-row"><td colspan="3">⏳ Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── MANAGE USERS ───────────────────────────────────────────────────────── -->
+  <section id="section-users" class="tab-section">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">👥 All Users</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="user-search" placeholder="Search name or email…" oninput="debounceSearch()"/>
+          </div>
+          <select class="fsel" id="role-filter" onchange="loadUsers(1)">
+            <option value="">All Roles</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+            <option value="blocked">Blocked</option>
+          </select>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>User</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody id="users-body">
+          <tr class="loading-row"><td colspan="4">⏳ Loading users…</td></tr>
+        </tbody>
+      </table>
+      <div class="pagination">
+        <div class="page-info" id="users-page-info">—</div>
+        <div class="page-btns" id="users-page-btns"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ACTIVITY LOGS ──────────────────────────────────────────────────────── -->
+  <section id="section-logs" class="tab-section">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">📋 Recent User Activity (Registrations)</div>
+      </div>
+      <table>
+        <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Registered At</th></tr></thead>
+        <tbody id="logs-body">
+          <tr class="loading-row"><td colspan="4">⏳ Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<!-- ADD USER MODAL -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-title">+ Add New User</div>
+    <div class="modal-sub">Create a user account directly from the admin panel</div>
+    <div class="modal-field">
+      <label class="modal-label">Full Name</label>
+      <input class="modal-input" id="new-name" placeholder="John Doe"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Email</label>
+      <input class="modal-input" id="new-email" type="email" placeholder="john@example.com"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Password</label>
+      <input class="modal-input" id="new-password" type="password" placeholder="Min 8 characters"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Role</label>
+      <select class="modal-input" id="new-role">
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+      <button class="btn-confirm" onclick="addUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : 'http://3.110.130.238:5000';
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || '{}');
+
+  // ── Auth guard ───────────────────────────────────────────────────────────────
+  if (!token) { window.location.replace('index.html'); }
+
+  // ── Set admin name in sidebar ────────────────────────────────────────────────
+  if (user.name) {
+    document.getElementById('sidebar-admin-name').textContent = user.name;
+    document.getElementById('admin-avatar-initials').textContent =
+      user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  }
+
+  // ── Auth headers ─────────────────────────────────────────────────────────────
+  const AUTH = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+  // ── Section switcher ──────────────────────────────────────────────────────────
+  function showSection(name, el) {
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('section-' + name).classList.add('active');
+    if (el) el.classList.add('active');
+    if (name === 'users') loadUsers(1);
+    if (name === 'logs')  loadLogs();
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────────
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── Logout ────────────────────────────────────────────────────────────────────
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace('index.html');
+  }
+
+  // ── LOAD STATS ────────────────────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const res  = await fetch(`${API}/api/admin/stats`, { headers: AUTH });
+      const data = await res.json();
+      if (!res.ok) { console.error('Stats error:', data.message); return; }
+
+      document.getElementById('stat-total-users').textContent = data.totalUsers.toLocaleString();
+      document.getElementById('stat-new-week').textContent    = `↑ ${data.newThisWeek} this week`;
+      document.getElementById('stat-blocked').textContent     = data.blockedUsers;
+      document.getElementById('stat-blocks-week').textContent = `↑ ${data.newBlocksWeek} new blocks`;
+
+      // Backup stats (will show 0 until backup model is added)
+      document.getElementById('stat-total-backups').textContent = data.totalBackups || '—';
+      document.getElementById('stat-backups-today').textContent = data.backupsToday ? `↑ ${data.backupsToday} today` : 'No backup model yet';
+      document.getElementById('stat-storage').textContent       = data.totalStorageGB ? data.totalStorageGB + ' GB' : '—';
+      document.getElementById('stat-storage-growth').textContent= data.storageGrowthGB ? `↑ ${data.storageGrowthGB} GB this week` : '—';
+      document.getElementById('stat-success').textContent       = data.successRate ? data.successRate + '%' : '—';
+      document.getElementById('stat-success-sub').textContent   = '—';
+    } catch (e) {
+      console.error('Stats fetch failed:', e);
+    }
+  }
+
+  // ── LOAD RECENT USERS (overview) ──────────────────────────────────────────────
+  async function loadRecentUsers() {
+    try {
+      const res  = await fetch(`${API}/api/admin/users?limit=5&page=1`, { headers: AUTH });
+      const data = await res.json();
+      if (!res.ok) return;
+      const tbody = document.getElementById('recent-users-body');
+      if (!data.users.length) { tbody.innerHTML = '<tr><td colspan="3" class="loading-row">No users yet.</td></tr>'; return; }
+      tbody.innerHTML = data.users.map(u => `
+        <tr>
+          <td>
+            <div class="user-cell">
+              <div class="u-avatar" style="background:${avatarColor(u.name)}">${initials(u.name)}</div>
+              <div><div class="u-name">${esc(u.name)}</div><div class="u-email">${esc(u.email)}</div></div>
+            </div>
+          </td>
+          <td><span class="badge ${roleBadge(u.role)}">${u.role}</span></td>
+          <td>${formatDate(u.createdAt)}</td>
+        </tr>`).join('');
+    } catch (e) { console.error(e); }
+  }
+
+  // ── LOAD USERS TABLE ──────────────────────────────────────────────────────────
+  let currentPage = 1;
+  let searchTimer = null;
+
+  function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadUsers(1), 400);
+  }
+
+  async function loadUsers(page = 1) {
+    currentPage = page;
+    const search = document.getElementById('user-search').value.trim();
+    const role   = document.getElementById('role-filter').value;
+    const tbody  = document.getElementById('users-body');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="4">⏳ Loading…</td></tr>';
+
+    try {
+      const url = `${API}/api/admin/users?page=${page}&limit=10&search=${encodeURIComponent(search)}&role=${role}`;
+      const res  = await fetch(url, { headers: AUTH });
+      const data = await res.json();
+      if (!res.ok) { tbody.innerHTML = `<tr class="loading-row"><td colspan="4">❌ ${data.message}</td></tr>`; return; }
+
+      if (!data.users.length) {
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="4">No users found.</td></tr>';
+        document.getElementById('users-page-info').textContent = '0 users';
+        document.getElementById('users-page-btns').innerHTML = '';
+        return;
+      }
+
+      tbody.innerHTML = data.users.map(u => `
+        <tr>
+          <td>
+            <div class="user-cell">
+              <div class="u-avatar" style="background:${avatarColor(u.name)}">${initials(u.name)}</div>
+              <div><div class="u-name">${esc(u.name)}</div><div class="u-email">${esc(u.email)}</div></div>
+            </div>
+          </td>
+          <td><span class="badge ${roleBadge(u.role)}">${u.role}</span></td>
+          <td>${formatDate(u.createdAt)}</td>
+          <td>
+            <button class="act-btn block" onclick="toggleBlock('${u._id}','${esc(u.name)}','${u.role}')">${u.role === 'blocked' ? '✅ Unblock' : '🔒 Block'}</button>
+            <button class="act-btn del"   onclick="deleteUser('${u._id}','${esc(u.name)}')">🗑 Delete</button>
+          </td>
+        </tr>`).join('');
+
+      // Pagination info
+      const from = (page - 1) * 10 + 1;
+      const to   = Math.min(page * 10, data.total);
+      document.getElementById('users-page-info').textContent = `Showing ${from}–${to} of ${data.total} users`;
+      renderPagination(data.pages, page);
+    } catch (e) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="4">❌ Cannot connect to server.</td></tr>';
+    }
+  }
+
+  function renderPagination(pages, current) {
+    const wrap = document.getElementById('users-page-btns');
+    let html = `<button class="page-btn" onclick="loadUsers(${current-1})" ${current===1?'disabled':''}>‹</button>`;
+    for (let i = 1; i <= pages; i++) {
+      if (pages > 7 && i > 2 && i < pages - 1 && Math.abs(i - current) > 1) {
+        if (i === 3 || i === pages - 2) html += `<span style="color:var(--muted);padding:0 4px">…</span>`;
+        continue;
+      }
+      html += `<button class="page-btn ${i===current?'active':''}" onclick="loadUsers(${i})">${i}</button>`;
+    }
+    html += `<button class="page-btn" onclick="loadUsers(${current+1})" ${current===pages?'disabled':''}>›</button>`;
+    wrap.innerHTML = html;
+  }
+
+  // ── BLOCK / UNBLOCK ───────────────────────────────────────────────────────────
+  async function toggleBlock(id, name, currentRole) {
+    const action = currentRole === 'blocked' ? 'unblock' : 'block';
+    if (!confirm(`Are you sure you want to ${action} "${name}"?`)) return;
+    try {
+      const res  = await fetch(`${API}/api/admin/users/${id}/block`, { method: 'PUT', headers: AUTH });
+      const data = await res.json();
+      if (!res.ok) { showToast('❌ ' + data.message, true); return; }
+      showToast(`✅ User ${action}ed successfully`);
+      loadUsers(currentPage);
+      loadStats();
+    } catch (e) { showToast('❌ Cannot connect to server.', true); }
+  }
+
+  // ── DELETE USER ───────────────────────────────────────────────────────────────
+  async function deleteUser(id, name) {
+    if (!confirm(`⚠️ Permanently delete "${name}"? This cannot be undone.`)) return;
+    try {
+      const res  = await fetch(`${API}/api/admin/users/${id}`, { method: 'DELETE', headers: AUTH });
+      const data = await res.json();
+      if (!res.ok) { showToast('❌ ' + data.message, true); return; }
+      showToast('🗑 User deleted');
+      loadUsers(currentPage);
+      loadStats();
+    } catch (e) { showToast('❌ Cannot connect to server.', true); }
+  }
+
+  // ── ADD USER MODAL ────────────────────────────────────────────────────────────
+  function openAddModal()  { document.getElementById('add-modal').classList.add('show'); }
+  function closeAddModal() { document.getElementById('add-modal').classList.remove('show'); }
+
+  async function addUser() {
+    const name     = document.getElementById('new-name').value.trim();
+    const email    = document.getElementById('new-email').value.trim();
+    const password = document.getElementById('new-password').value.trim();
+    const role     = document.getElementById('new-role').value;
+    if (!name || !email || !password) { showToast('❌ Please fill all fields', true); return; }
+    if (password.length < 8) { showToast('❌ Password must be 8+ characters', true); return; }
+    try {
+      const res  = await fetch(`${API}/api/admin/users`, {
+        method: 'POST', headers: AUTH,
+        body: JSON.stringify({ name, email, password, role })
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast('❌ ' + data.message, true); return; }
+      showToast('✅ User created successfully');
+      closeAddModal();
+      ['new-name','new-email','new-password'].forEach(id => document.getElementById(id).value = '');
+      loadUsers(1); loadStats();
+    } catch (e) { showToast('❌ Cannot connect to server.', true); }
+  }
+
+  // ── LOAD LOGS (uses users list as activity proxy) ─────────────────────────────
+  async function loadLogs() {
+    const tbody = document.getElementById('logs-body');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="4">⏳ Loading…</td></tr>';
+    try {
+      const res  = await fetch(`${API}/api/admin/users?limit=20&page=1`, { headers: AUTH });
+      const data = await res.json();
+      if (!res.ok) { tbody.innerHTML = `<tr class="loading-row"><td colspan="4">❌ ${data.message}</td></tr>`; return; }
+      if (!data.users.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="4">No activity yet.</td></tr>'; return; }
+      tbody.innerHTML = data.users.map(u => `
+        <tr>
+          <td>
+            <div class="user-cell">
+              <div class="u-avatar" style="background:${avatarColor(u.name)}">${initials(u.name)}</div>
+              <div class="u-name">${esc(u.name)}</div>
+            </div>
+          </td>
+          <td>${esc(u.email)}</td>
+          <td><span class="badge ${roleBadge(u.role)}">${u.role}</span></td>
+          <td>${formatDate(u.createdAt)}</td>
+        </tr>`).join('');
+    } catch (e) { tbody.innerHTML = '<tr class="loading-row"><td colspan="4">❌ Cannot connect to server.</td></tr>'; }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+  function esc(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function initials(name) { return (name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+  function avatarColor(name) {
+    const colors = ['#3b82f6','#06d6a0','#f59e0b','#a78bfa','#f87171','#38bdf8','#fb7185'];
+    let hash = 0; for (const c of (name||'')) hash = c.charCodeAt(0) + ((hash<<5)-hash);
+    return colors[Math.abs(hash) % colors.length];
+  }
+  function roleBadge(role) { return role === 'blocked' ? 'blocked' : role === 'admin' ? 'admin' : 'active'; }
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────────────
+  loadStats();
+  loadRecentUsers();
+</script>
+</body>
+</html>

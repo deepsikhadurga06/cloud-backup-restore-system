@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cloud Backup and Recovery System — Settings</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060d1a; --sidebar: #080f1f; --card: #0d1829;
+      --border: rgba(56,139,255,0.12); --accent: #3b82f6;
+      --accent2: #06d6a0; --accent3: #f59e0b; --danger: #f87171;
+      --text: #dde8ff; --muted: #5a7099; --sidebar-w: 240px;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+    .bg-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-image: linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px); background-size: 44px 44px; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w); background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; padding: 28px 0; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 22px 28px; border-bottom: 1px solid var(--border); }
+    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 6px 18px rgba(59,130,246,0.35); }
+    .logo-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; letter-spacing: -0.4px; }
+    .logo-name span { color: var(--accent); }
+    .nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 1.2px; color: var(--muted); padding: 10px 10px 6px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; color: var(--muted); font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+    .nav-item:hover { background: rgba(59,130,246,0.08); color: var(--text); }
+    .nav-item.active { background: rgba(59,130,246,0.14); color: var(--accent); border: 1px solid rgba(59,130,246,0.2); }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-user { margin: 0 12px; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .user-name { font-size: 13px; font-weight: 600; }
+    .user-plan { font-size: 11px; color: var(--accent2); }
+    .main { margin-left: var(--sidebar-w); flex: 1; padding: 32px 36px; position: relative; z-index: 1; animation: fadeIn 0.5s ease both; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .page-sub { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+    .settings-tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 5px; margin-bottom: 24px; width: fit-content; }
+    .stab { padding: 9px 18px; border-radius: 9px; border: none; background: transparent; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .stab.active { background: var(--accent); color: #fff; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+    .settings-section { display: none; }
+    .settings-section.active { display: block; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 26px; margin-bottom: 20px; }
+    .card-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 20px; }
+    .profile-header { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
+    .profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: #fff; flex-shrink: 0; box-shadow: 0 8px 24px rgba(59,130,246,0.3); }
+    .profile-name { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+    .profile-email { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field { margin-bottom: 16px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 7px; letter-spacing: 0.4px; text-transform: uppercase; }
+    input[type="text"], input[type="email"], input[type="password"], select, input[type="number"] { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    input::placeholder { color: var(--muted); }
+    select option { background: #0d1829; }
+    .btn-save { padding: 11px 24px; background: linear-gradient(135deg, var(--accent), #2563eb); border: none; border-radius: 10px; color: #fff; font-family: 'Syne', sans-serif; font-size: 13.5px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(59,130,246,0.3); transition: transform 0.15s; }
+    .btn-save:hover { transform: translateY(-1px); }
+    .btn-danger { padding: 11px 24px; background: transparent; border: 1px solid var(--danger); border-radius: 10px; color: var(--danger); font-family: 'DM Sans', sans-serif; font-size: 13.5px; cursor: pointer; transition: all 0.2s; }
+    .btn-danger:hover { background: rgba(248,113,113,0.1); }
+    .toggle-wrap { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .toggle-wrap:last-child { border-bottom: none; }
+    .toggle-label { font-size: 14px; font-weight: 500; }
+    .toggle-desc { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .switch input { display: none; }
+    .slider { position: absolute; inset: 0; background: rgba(255,255,255,0.08); border-radius: 999px; cursor: pointer; transition: 0.3s; border: 1px solid var(--border); }
+    .slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; background: var(--muted); border-radius: 50%; transition: 0.3s; }
+    input:checked + .slider { background: var(--accent); border-color: var(--accent); }
+    input:checked + .slider::before { transform: translateX(20px); background: #fff; }
+    .storage-bar-wrap { background: rgba(255,255,255,0.04); border-radius: 999px; height: 10px; margin: 10px 0 6px; overflow: hidden; }
+    .storage-bar { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.5s; }
+    .storage-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+    .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+    .stat-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+    .stat-box-val { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent); }
+    .stat-box-lbl { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .danger-zone { border: 1px solid rgba(248,113,113,0.25); border-radius: 16px; padding: 26px; background: rgba(248,113,113,0.03); }
+    .danger-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid rgba(248,113,113,0.1); }
+    .danger-item:last-child { border-bottom: none; }
+    .danger-label { font-size: 14px; font-weight: 500; }
+    .danger-desc { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .toast { position: fixed; bottom: 28px; right: 28px; z-index: 300; background: #0d1829; border: 1px solid rgba(6,214,160,0.3); border-radius: 12px; padding: 14px 20px; color: var(--accent2); font-size: 13.5px; display: none; align-items: center; gap: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    .toast.show { display: flex; }
+    .toast.error { border-color: rgba(248,113,113,0.3); color: var(--danger); }
+    @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } .stat-row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 720px) { .sidebar { display: none; } .main { margin-left: 0; padding: 20px 16px; } }
+  </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">☁</div>
+    <div class="logo-name">Cloud Backup & <span>Recovery</span></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-label">Main</div>
+    <a class="nav-item" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-item" href="upload.html"><span class="nav-icon">⬆</span> Upload Backup</a>
+    <a class="nav-item" href="backup.html"><span class="nav-icon">📁</span> My Backups</a>
+    <a class="nav-item" href="restore.html"><span class="nav-icon">🔄</span> Restore Files</a>
+    <a class="nav-item active" href="setting.html"><span class="nav-icon">⚙️</span> Settings</a>
+    <a class="nav-item" href="#" onclick="logout()"><span class="nav-icon">🚪</span> Logout</a>
+  </nav>
+  <div class="sidebar-user">
+    <div class="avatar" id="sidebar-avatar">?</div>
+    <div>
+      <div class="user-name" id="sidebar-name">Loading...</div>
+      <div class="user-plan" id="sidebar-plan">Free Plan</div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">⚙️ Settings</div>
+      <div class="page-sub">Manage your account and preferences</div>
+    </div>
+  </div>
+
+  <div class="settings-tabs">
+    <button class="stab active" onclick="switchTab('profile', this)">👤 Profile</button>
+    <button class="stab" onclick="switchTab('notifications', this)">🔔 Notifications</button>
+    <button class="stab" onclick="switchTab('storage', this)">📊 Storage</button>
+    <button class="stab" onclick="switchTab('security', this)">🔒 Security</button>
+  </div>
+
+  <!-- PROFILE TAB -->
+  <div class="settings-section active" id="tab-profile">
+    <div class="card">
+      <div class="card-title">👤 Profile Information</div>
+      <div class="profile-header">
+        <div class="profile-avatar" id="profile-avatar">?</div>
+        <div>
+          <div class="profile-name" id="profile-name">Loading...</div>
+          <div class="profile-email" id="profile-email-display">Loading...</div>
+          <div style="font-size:11px;color:var(--accent2);margin-top:4px;" id="profile-role">—</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>First Name</label><input type="text" id="input-firstname" placeholder="First name"/></div>
+        <div class="field"><label>Last Name</label><input type="text" id="input-lastname" placeholder="Last name"/></div>
+      </div>
+      <div class="field"><label>Email Address</label><input type="email" id="input-email" placeholder="your@email.com"/></div>
+      <div class="field"><label>Phone Number</label><input type="text" id="input-phone" placeholder="+91 234 567 8900"/></div>
+      <div class="field" style="margin-bottom:0;"><label>Timezone</label>
+        <select id="input-timezone">
+          <option value="Asia/Kolkata">Asia/Kolkata (IST, UTC+5:30)</option>
+          <option value="America/New_York">America/New_York (EST, UTC-5)</option>
+          <option value="Europe/London">Europe/London (GMT, UTC+0)</option>
+          <option value="Asia/Tokyo">Asia/Tokyo (JST, UTC+9)</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:flex-end;">
+      <button class="btn-save" onclick="saveProfile()">Save Changes</button>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS TAB -->
+  <div class="settings-section" id="tab-notifications">
+    <div class="card">
+      <div class="card-title">🔔 Notification Preferences</div>
+      <div class="toggle-wrap">
+        <div><div class="toggle-label">Backup Completed</div><div class="toggle-desc">Get notified when a backup finishes</div></div>
+        <label class="switch"><input type="checkbox" id="notif-backup-complete" checked/><span class="slider"></span></label>
+      </div>
+      <div class="toggle-wrap">
+        <div><div class="toggle-label">Backup Failed</div><div class="toggle-desc">Alert if any backup fails</div></div>
+        <label class="switch"><input type="checkbox" id="notif-backup-failed" checked/><span class="slider"></span></label>
+      </div>
+      <div class="toggle-wrap">
+        <div><div class="toggle-label">File Restored</div><div class="toggle-desc">Notify when a file restore completes</div></div>
+        <label class="switch"><input type="checkbox" id="notif-file-restored" checked/><span class="slider"></span></label>
+      </div>
+      <div class="toggle-wrap">
+        <div><div class="toggle-label">Storage Warning</div><div class="toggle-desc">Alert at 80% storage usage</div></div>
+        <label class="switch"><input type="checkbox" id="notif-storage-warning" checked/><span class="slider"></span></label>
+      </div>
+      <div class="toggle-wrap">
+        <div><div class="toggle-label">Weekly Summary</div><div class="toggle-desc">Weekly backup activity report</div></div>
+        <label class="switch"><input type="checkbox" id="notif-weekly-summary"/><span class="slider"></span></label>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:flex-end;">
+      <button class="btn-save" onclick="saveNotifications()">Save Preferences</button>
+    </div>
+  </div>
+
+  <!-- STORAGE TAB -->
+  <div class="settings-section" id="tab-storage">
+    <div class="card">
+      <div class="card-title">📊 Your Storage Usage</div>
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-box-val" id="storage-files">—</div>
+          <div class="stat-box-lbl">Total Files</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val" id="storage-used">—</div>
+          <div class="stat-box-lbl">Storage Used</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val" id="storage-today">—</div>
+          <div class="stat-box-lbl">Uploaded Today</div>
+        </div>
+      </div>
+      <label style="margin-bottom:8px;">Storage Used</label>
+      <div class="storage-bar-wrap">
+        <div class="storage-bar" id="storage-bar" style="width:0%"></div>
+      </div>
+      <div class="storage-info">
+        <span id="storage-used-label">0 MB used</span>
+        <span>Unlimited (AWS S3)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECURITY TAB -->
+  <div class="settings-section" id="tab-security">
+    <div class="card">
+      <div class="card-title">🔒 Change Password</div>
+      <div class="field"><label>Current Password</label><input type="password" id="cur-pass" placeholder="Enter current password"/></div>
+      <div class="grid-2">
+        <div class="field"><label>New Password</label><input type="password" id="new-pass" placeholder="Min. 8 characters"/></div>
+        <div class="field"><label>Confirm Password</label><input type="password" id="confirm-pass" placeholder="Repeat new password"/></div>
+      </div>
+      <button class="btn-save" onclick="changePassword()">Update Password</button>
+    </div>
+    <div class="card">
+      <div class="card-title">🛡️ Security Settings</div>
+      <div class="toggle-wrap">
+        <div><div class="toggle-label">Encrypt Backups</div><div class="toggle-desc">AES-256 encryption on all files</div></div>
+        <label class="switch"><input type="checkbox" checked/><span class="slider"></span></label>
+      </div>
+      <div class="toggle-wrap">
+        <div><div class="toggle-label">Login Alerts</div><div class="toggle-desc">Get notified on new login to your account</div></div>
+        <label class="switch"><input type="checkbox" checked/><span class="slider"></span></label>
+      </div>
+    </div>
+    <div class="danger-zone">
+      <div class="danger-item">
+        <div><div class="danger-label">Delete All My Backups</div><div class="danger-desc">Permanently delete all your backed up files from S3</div></div>
+        <button class="btn-danger" onclick="deleteAllBackups()">Delete All</button>
+      </div>
+      <div class="danger-item">
+        <div><div class="danger-label">Delete Account</div><div class="danger-desc">Permanently delete your account and all data</div></div>
+        <button class="btn-danger" onclick="deleteAccount()">Delete Account</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000' : 'http://3.110.130.238:5000';
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  if (!token) window.location.replace('index.html');
+
+  // ── Toast ─────────────────────────────────────────────────────────────────────
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── Tab switcher ──────────────────────────────────────────────────────────────
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    btn.classList.add('active');
+    if (tab === 'storage') loadStorageStats();
+  }
+
+  // ── Load user data ────────────────────────────────────────────────────────────
+  function loadUserData() {
+    if (!user.name) return;
+    const nameParts = user.name.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    const initial = firstName[0] ? firstName[0].toUpperCase() : '?';
+
+    document.getElementById('sidebar-avatar').textContent = initial;
+    document.getElementById('sidebar-name').textContent = user.name;
+    document.getElementById('sidebar-plan').textContent = user.email || '';
+    document.getElementById('profile-avatar').textContent = initial;
+    document.getElementById('profile-name').textContent = user.name;
+    document.getElementById('profile-email-display').textContent = user.email || '';
+    document.getElementById('profile-role').textContent = user.role === 'admin' ? '⭐ Admin' : '👤 User';
+    document.getElementById('input-firstname').value = firstName;
+    document.getElementById('input-lastname').value = lastName;
+    document.getElementById('input-email').value = user.email || '';
+
+    // Load saved phone & timezone
+    const extras = JSON.parse(localStorage.getItem('profile-extras') || '{}');
+    if (extras.phone) document.getElementById('input-phone').value = extras.phone;
+    if (extras.timezone) document.getElementById('input-timezone').value = extras.timezone;
+  }
+
+  // ── Save profile ──────────────────────────────────────────────────────────────
+  function saveProfile() {
+    const firstName = document.getElementById('input-firstname').value.trim();
+    const lastName = document.getElementById('input-lastname').value.trim();
+    const email = document.getElementById('input-email').value.trim();
+    const phone = document.getElementById('input-phone').value.trim();
+    const timezone = document.getElementById('input-timezone').value;
+
+    if (!firstName || !email) { showToast('❌ Name and email are required', true); return; }
+
+    const updatedUser = { ...user, name: `${firstName} ${lastName}`.trim(), email };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    localStorage.setItem('profile-extras', JSON.stringify({ phone, timezone }));
+    loadUserData();
+    showToast('✅ Profile saved successfully!');
+  }
+
+  // ── Notifications ─────────────────────────────────────────────────────────────
+  function loadNotifications() {
+    const prefs = JSON.parse(localStorage.getItem('notif-prefs') || '{}');
+    const ids = ['notif-backup-complete','notif-backup-failed','notif-file-restored','notif-storage-warning','notif-weekly-summary'];
+    const defaults = [true, true, true, true, false];
+    ids.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = prefs[id] !== undefined ? prefs[id] : defaults[i];
+    });
+  }
+
+  function saveNotifications() {
+    const ids = ['notif-backup-complete','notif-backup-failed','notif-file-restored','notif-storage-warning','notif-weekly-summary'];
+    const prefs = {};
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) prefs[id] = el.checked;
+    });
+    localStorage.setItem('notif-prefs', JSON.stringify(prefs));
+    showToast('✅ Notification preferences saved!');
+  }
+
+  // ── Storage Stats ─────────────────────────────────────────────────────────────
+  async function loadStorageStats() {
+    try {
+      const res = await fetch(`${API}/api/backup/list`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!data.success) return;
+
+      const files = data.files || [];
+      const today = new Date().toDateString();
+      const totalSize = files.reduce((s, f) => s + f.size, 0);
+      const todayFiles = files.filter(f => new Date(f.date).toDateString() === today).length;
+
+      document.getElementById('storage-files').textContent = files.length;
+      document.getElementById('storage-today').textContent = todayFiles;
+
+      // Format size
+      let sizeStr = totalSize + ' B';
+      if (totalSize >= 1024 * 1024 * 1024) sizeStr = (totalSize / (1024**3)).toFixed(2) + ' GB';
+      else if (totalSize >= 1024 * 1024) sizeStr = (totalSize / (1024**2)).toFixed(1) + ' MB';
+      else if (totalSize >= 1024) sizeStr = (totalSize / 1024).toFixed(1) + ' KB';
+
+      document.getElementById('storage-used').textContent = sizeStr;
+      document.getElementById('storage-used-label').textContent = sizeStr + ' used';
+
+      // Bar — relative to 1GB max display
+      const pct = Math.min((totalSize / (1024**3)) * 100, 100);
+      document.getElementById('storage-bar').style.width = Math.max(pct, 2) + '%';
+    } catch (e) {
+      document.getElementById('storage-files').textContent = '—';
+      document.getElementById('storage-used').textContent = '—';
+      document.getElementById('storage-today').textContent = '—';
+    }
+  }
+
+  // ── Change Password ───────────────────────────────────────────────────────────
+  async function changePassword() {
+    const current = document.getElementById('cur-pass').value;
+    const newPass = document.getElementById('new-pass').value;
+    const confirm = document.getElementById('confirm-pass').value;
+
+    if (!current || !newPass || !confirm) { showToast('❌ Please fill all fields', true); return; }
+    if (newPass !== confirm) { showToast('❌ Passwords do not match', true); return; }
+    if (newPass.length < 8) { showToast('❌ Password must be 8+ characters', true); return; }
+
+    try {
+      const res = await fetch(`${API}/api/auth/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: current, newPassword: newPass })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('✅ Password changed successfully!');
+        document.getElementById('cur-pass').value = '';
+        document.getElementById('new-pass').value = '';
+        document.getElementById('confirm-pass').value = '';
+      } else {
+        showToast('❌ ' + data.message, true);
+      }
+    } catch (e) {
+      showToast('❌ Cannot connect to server', true);
+    }
+  }
+
+  // ── Delete All Backups ────────────────────────────────────────────────────────
+  async function deleteAllBackups() {
+    if (!confirm('⚠️ Delete ALL your backup files? This cannot be undone!')) return;
+    try {
+      const res = await fetch(`${API}/api/backup/list`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!data.success || !data.files.length) { showToast('No files to delete'); return; }
+
+      for (const file of data.files) {
+        await fetch(`${API}/api/backup/delete?key=${encodeURIComponent(file.key)}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
+      showToast('🗑 All backups deleted!');
+      loadStorageStats();
+    } catch (e) {
+      showToast('❌ Cannot connect to server', true);
+    }
+  }
+
+  // ── Delete Account ────────────────────────────────────────────────────────────
+  async function deleteAccount() {
+    if (!confirm('⚠️ Permanently delete your account? This cannot be undone!')) return;
+    if (!confirm('Are you absolutely sure? All your data will be lost!')) return;
+    try {
+      const res = await fetch(`${API}/api/auth/delete-account`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        localStorage.clear();
+        window.location.replace('index.html');
+      } else {
+        const data = await res.json();
+        showToast('❌ ' + data.message, true);
+      }
+    } catch (e) {
+      showToast('❌ Cannot connect to server', true);
+    }
+  }
+
+  // ── Logout ────────────────────────────────────────────────────────────────────
+  function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace('index.html');
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
+  loadUserData();
+  loadNotifications();
+</script>
+</body>
+</html>
